@@ -1,6 +1,6 @@
 # Jenkins + Proxmox
 
-## 🔧 **1. Установка плагина**
+## **1. Установка плагина**
 
 **Ссылка на плагин:**
 - **Официальная:** https://plugins.jenkins.io/proxmox/
@@ -13,7 +13,7 @@ https://jenkins.runtel.ru/manage/pluginManager/available
 
 ---
 
-## ☁️ **2. Создание облака Proxmox**
+## **2. Создание облака Proxmox**
 
 **Перейти:**
 ```
@@ -23,68 +23,15 @@ https://jenkins.runtel.ru/manage/cloud/
 ```
 https://jenkins.runtel.ru/manage/configureClouds/
 ```
-Нажать на кнопку **`+ New cloud`**
+Нажать на кнопку **`+ New cloud`** ☁️
 
 И вот уже есть https://jenkins.runtel.ru/manage/cloud/Datacenter(proxmox)/
 
 ---
 
-## ⚙️ **3. Настройка подключения**
+## 🖥️ **3. Проверка в script console**
 
-**Форма:**
-```
-Name: Proxmox-Cloud
-Credentials: [Add] → Jenkins → Username with password
-  Username: root@pam
-  Password: [ваш пароль]
-Proxmox server URL: https://ВАШ_IP:8006/api2/json
-Ignore SSL: ☑ (если самоподписанный)
-[Test Connection] → Должен быть "Success"
-[Save]
-```
-
----
-
-## 🖥️ **4. Настройка виртуальной машины**
-
-**В той же форме ниже:**
-┌─────────────────────────────────────┐
-│ Virtual Machines                    │
-├─────────────────────────────────────┤
-│ [Add]                              │ ← КЛИК!
-│                                     │
-│ VM Id: 9000 (ID шаблона)           │
-│ Description: Jenkins Agent         │
-│                                     │
-│ Launch method:                     │
-│ → Launch via execution on master   │
-│                                     │
-│ Labels: proxmox-linux              │
-│ Usage: Use as much as possible     │
-└─────────────────────────────────────┘
-
----
-
-## ✅ **5. Проверка**
-
-**Создать тестовый Pipeline:**
-```
-https://jenkins.runtel.ru/view/all/newJob
-```
-```groovy
-pipeline {
-    agent { label 'proxmox-linux' }
-    stages {
-        stage('Test') {
-            steps { echo 'Hello Proxmox!' }
-        }
-    }
-}
-```
-
----
-
-## 🖥️ **5. Проверка в script console**
+Несмотря на то, что версия плагина `Proxmox plugin 0.7.1` самая свежа, в нашем случае не получается через GUI провести полный настройки, придётся воспользоваться script console.
 
 **Открываем script console:**
 ```
@@ -157,9 +104,58 @@ dc.properties.each { key, value ->
     }
 }
 ```
-И увидим строку  ***`searchIndex=hudson.search.FixedSet@280f406a, nodes=[pmx6, prox4, pmx5]`*** - это и есть наши "железные" Proxmox сервера
+И увидим строку  ***`searchIndex=hudson.search.FixedSet@280f406a, nodes=[pmx6, prox4, pmx5]`*** - В плагине ВМ хранятся в nodes, а не в templates; в nodes уже есть [pmx6, prox4, pmx5]. Это и есть ВМ!
 
----
+
+**Смотрим что в nodes**
+```groovy
+import org.jenkinsci.plugins.proxmox.*
+import jenkins.model.Jenkins
+
+def dc = Jenkins.instance.clouds[0]
+
+println "=== Изучаем nodes ==="
+println "Количество nodes: ${dc.nodes.size()}"
+
+dc.nodes.eachWithIndex { node, i ->
+    println "\nNode ${i+1}:"
+    println "  Класс: ${node.getClass().name}"
+    
+    // Смотрим свойства ноды
+    node.properties.each { key, value ->
+        if (!key.contains("class") && !key.contains("metaClass")) {
+            println "  ${key}: ${value}"
+        }
+    }
+}
+```
+```c  
+=== Изучаем nodes ===
+Количество nodes: 3
+
+Node 1:
+  Класс: java.lang.String
+  blank: false
+  empty: false
+  bytes: [112, 109, 120, 54]
+  latin1: true
+
+Node 2:
+  Класс: java.lang.String
+  blank: false
+  empty: false
+  bytes: [112, 109, 120, 53]
+  latin1: true
+
+Node 3:
+  Класс: java.lang.String
+  blank: false
+  empty: false
+  bytes: [112, 114, 111, 120, 52]
+  latin1: true
+Result: [pmx6, pmx5, prox4]
+```
+
 
 
 
