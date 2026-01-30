@@ -10,19 +10,6 @@
 ```
 https://jenkins.runtel.ru/manage/pluginManager/available
 ```
-┌─────────────────────────────────────┐
-│ Available Plugins                   │
-├─────────────────────────────────────┤
-│ [Поиск] "proxmox"                   │
-│                                     │
-│ Proxmox Plugin ✓                   │
-│ Version: 0.7.1                      │
-│                                     │
-│ □ Install without restart           │
-│ ☑ Restart Jenkins after installation│
-│                                     │
-│ [Install]                          │
-└─────────────────────────────────────┘
 
 ---
 
@@ -36,19 +23,7 @@ https://jenkins.runtel.ru/manage/cloud/
 ```
 https://jenkins.runtel.ru/manage/configureClouds/
 ```
-
-**Действия:**
-┌─────────────────────────────────────┐
-│ Configure Clouds                    │
-├─────────────────────────────────────┤
-│                                     │
-│ [Add a new cloud] ▼                │ ← КЛИК!
-│   • None                           │
-│   • Amazon EC2                     │
-│   • Azure VM Agents                │
-│   → Proxmox                        │ ← ВЫБРАТЬ!
-│   • Kubernetes                     │
-└─────────────────────────────────────┘
+Нажать на кнопку **`+ New cloud`**
 
 ---
 
