@@ -209,12 +209,54 @@ cycle-single-builder (контейнер 192.168.87.55)
     ↓ принимает подключения по SSH
 ```
 
+**Смотрим SSH ключи, токены и т.д. https://jenkins.runtel.ru/script**
+```groovy
+import com.cloudbees.plugins.credentials.CredentialsProvider
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials
+
+def creds = CredentialsProvider.lookupCredentials(
+    StandardUsernameCredentials.class,
+    Jenkins.instance,
+    null,
+    null
+)
+
+creds.each { cred ->
+    println "ID: ${cred.id}"
+    println "Username: ${cred.username}"
+    println "Description: ${cred.description}"
+    println "---"
+}
+```
 
 ---
 
+## **5. Создать pipeline для проверки соединения**
 
-
-
+ТЕстовый pipeline для проверки соединения.
+```groovy
+// Простейший тест без credentials
+pipeline {
+    agent {
+        label 'deb12-builder'
+    }
+    
+    stages {
+        stage('Простой тест') {
+            steps {
+                sh '''
+                    # Просто используем ключ который уже есть на ноде
+                    ssh -o StrictHostKeyChecking=no \
+                        root@192.168.87.55 "
+                        echo 'Контейнер: ' \$(hostname)
+                        echo 'Работает!'
+                    "
+                '''
+            }
+        }
+    }
+}
+```
 
 
 
