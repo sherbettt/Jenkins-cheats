@@ -209,6 +209,11 @@ cycle-single-builder (контейнер 192.168.87.55)
     ↓ принимает подключения по SSH
 ```
 
+<p align="center">
+  <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_System_3.png" alt="Jenkins Credentials new">
+</p>
+
+
 **Смотрим SSH ключи, токены и т.д. https://jenkins.runtel.ru/script**
 ```groovy
 import com.cloudbees.plugins.credentials.CredentialsProvider
