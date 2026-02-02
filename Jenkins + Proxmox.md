@@ -156,6 +156,27 @@ Node 3:
 Result: [pmx6, pmx5, prox4]
 ```
 
+
+**Смотрим SSH ключи, токены и т.д.**
+```groovy
+import com.cloudbees.plugins.credentials.CredentialsProvider
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials
+
+def creds = CredentialsProvider.lookupCredentials(
+    StandardUsernameCredentials.class,
+    Jenkins.instance,
+    null,
+    null
+)
+
+creds.each { cred ->
+    println "ID: ${cred.id}"
+    println "Username: ${cred.username}"
+    println "Description: ${cred.description}"
+    println "---"
+}
+```
+
 ---
 
 ## **4. Credentials**
