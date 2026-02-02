@@ -164,6 +164,28 @@ Result: [pmx6, pmx5, prox4]
 - [JIRA.runtel.ru Credentials](https://jenkins.runtel.ru/manage/credentials/store/system/domain/jira.runtel.ru/)
 - [Global Credentials](https://jenkins.runtel.ru/manage/credentials/store/system/domain/_/)
 
+```text
+Jenkins → Credentials → System → Global credentials → Add Credentials
+↓
+Тип: SSH Username with private key
+Username: root
+Private Key: 
+  • Enter directly (вставить содержимое /var/lib/jenkins/.ssh/id_rsa или ~/.ssh с deb12-builder)
+ID: proxmox-cycle-builder
+Description: SSH доступ к контейнеру cycle-single-builder
+```
+
+```text
+deb12-builder (Jenkins агент)
+    ↓ имеет SSH ключ (~/.ssh/id_rsa)
+    ↓ ключ добавлен в Jenkins Credentials
+    ↓ Jenkins использует ключ для подключения
+cycle-single-builder (контейнер 192.168.87.55)
+    ↓ в ~/.ssh/authorized_keys добавлен публичный ключ
+    ↓ принимает подключения по SSH
+```
+
+
 ---
 
 
