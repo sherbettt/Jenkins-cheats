@@ -1,10 +1,13 @@
 # Jenkins + Proxmox
 
-## **1. Установка плагина**
+## **1. Установка плагинов**
 
-**Ссылка на плагин:**
+**Ссылка на плагины:**
 - **Официальная:** https://plugins.jenkins.io/proxmox/
 - **GitHub:** https://github.com/jenkinsci/proxmox-plugin
+- **SSH:** https://plugins.jenkins.io/ssh/
+- **SSH Credentials:** https://plugins.jenkins.io/ssh-credentials/
+
 
 **Установка:**
 ```
