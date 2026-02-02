@@ -156,11 +156,15 @@ Node 3:
 Result: [pmx6, pmx5, prox4]
 ```
 
+---
 
+## **4. Credentials**
 
+см.: 
+- [JIRA.runtel.ru Credentials](https://jenkins.runtel.ru/manage/credentials/store/system/domain/jira.runtel.ru/)
+- [Global Credentials](https://jenkins.runtel.ru/manage/credentials/store/system/domain/_/)
 
-
-
+---
 
 
 
