@@ -411,13 +411,16 @@ pipeline {
 <br/>
 
 
+## **6. Настроить pipeline**
+
+<p align="center">
+  <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_System_2.png" alt="Jenkins Pipeline Settinfs">
+</p>
 
 
 
-
-
-
-
+----------------------------------------
+<br/>
 
 
 
