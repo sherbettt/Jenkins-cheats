@@ -42,6 +42,11 @@ https://jenkins.runtel.ru/manage/configureClouds/
 ```
 https://jenkins.runtel.ru/script
 ```
+
+
+<details>
+<summary>❗ script console ❗</summary>
+
 ```groovy
 import jenkins.model.Jenkins
 
@@ -181,6 +186,7 @@ creds.each { cred ->
     println "---"
 }
 ```
+</details>
 
 ----------------------------------------
 <br/>
