@@ -218,6 +218,7 @@ cycle-single-builder (контейнер 192.168.87.55)
     ↓ принимает подключения по SSH
 ```
 
+***Пример:***
 <p align="center">
   <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_System_3.png" alt="Jenkins Credentials new">
 </p>
@@ -413,6 +414,7 @@ pipeline {
 
 ## **6. Настроить pipeline**
 
+***Пример:***
 <p align="center">
   <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_System_2.png" alt="Jenkins Pipeline Settinfs">
 </p>
