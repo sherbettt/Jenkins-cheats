@@ -419,7 +419,7 @@ pipeline {
   <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_System_2.png" alt="Jenkins Pipeline Settinfs">
 </p>
 
-
+Также читай статью [ProxMox: pct.md](https://github.com/sherbettt/BASH-cheats/blob/main/System%20engineering/10.2.%20ProxMox:%20pct.md)
 
 ----------------------------------------
 <br/>
