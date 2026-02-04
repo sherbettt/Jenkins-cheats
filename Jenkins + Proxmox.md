@@ -193,6 +193,8 @@ creds.each { cred ->
 
 ## **4. Credentials**
 
+### SSH соединение с контейнером от ноды
+
 см.: 
 - [JIRA.runtel.ru Credentials](https://jenkins.runtel.ru/manage/credentials/store/system/domain/jira.runtel.ru/)
 - [Global Credentials](https://jenkins.runtel.ru/manage/credentials/store/system/domain/_/)
