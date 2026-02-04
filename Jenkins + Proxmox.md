@@ -245,6 +245,52 @@ creds.each { cred ->
     println "---"
 }
 ```
+
+**Ищем ID переменных**
+```groovy
+// Только File Credentials
+import com.cloudbees.plugins.credentials.CredentialsProvider
+import org.jenkinsci.plugins.plaincredentials.FileCredentials
+import jenkins.model.Jenkins
+
+println "=== ВСЕ FILE CREDENTIALS ==="
+println ""
+
+// Ищем во всех доменах
+def allCredentials = CredentialsProvider.lookupCredentials(
+    FileCredentials.class,
+    Jenkins.instance,
+    null,
+    null
+)
+
+if (allCredentials.isEmpty()) {
+    println "❌ File credentials не найдены"
+} else {
+    println "✅ Найдено ${allCredentials.size()} file credentials:"
+    println ""
+    
+    allCredentials.eachWithIndex { cred, index ->
+        println "${index + 1}. 📁 ${cred.fileName ?: 'Без имени файла'}"
+        println "   ID: ${cred.id}"
+        println "   Description: ${cred.description ?: 'Без описания'}"
+        println "   Class: ${cred.class.name}"
+        
+        // Попробуем получить путь к файлу
+        try {
+            def file = cred.getContent()
+            println "   📏 Размер: ${file.length()} байт"
+        } catch(e) {
+            println "   📏 Размер: Недоступно"
+        }
+        
+        // URL для прямого доступа
+        println "   🔗 URL: ${Jenkins.instance.rootUrl}manage/credentials/store/system/domain/_/credential/${cred.id}/"
+        println ""
+    }
+}
+```
+
 <br/>
 
 
