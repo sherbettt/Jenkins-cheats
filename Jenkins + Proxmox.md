@@ -254,7 +254,10 @@ creds.each { cred ->
 - Переходим по ссылке **[https://<your_project>.ru/manage/credentials/](https://jenkins.runtel.ru/manage/credentials/)** -> **[Global Credentials](https://jenkins.runtel.ru/manage/credentials/store/system/domain/_/)**
 - Нажмите кнопку **"Add Credentials"** 
 
-
+***Пример:***
+<p align="center">
+  <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_Vars_1.png" alt="Jenkins Credentials file">
+</p>
 
 
 ----------------------------------------
@@ -429,7 +432,7 @@ pipeline {
 
 ***Пример:***
 <p align="center">
-  <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_System_2.png" alt="Jenkins Pipeline Settinfs">
+  <img src="https://github.com/sherbettt/Jenkins-cheats/blob/main/images/Jenkins_System_2.png" alt="Jenkins Pipeline Settings">
 </p>
 
 Также читай статью [ProxMox: pct.md](https://github.com/sherbettt/BASH-cheats/blob/main/System%20engineering/10.2.%20ProxMox:%20pct.md)
