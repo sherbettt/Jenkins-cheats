@@ -487,7 +487,17 @@ pipeline {
 <br/>
 
 
+## **7. Настроить триггеры**
 
+читай статью [GitLab: jobtrigger](https://plugins.jenkins.io/gitlab-plugin/#plugin-content-job-trigger-configuration)
+
+Можно настроить в JenkinsFile:
+- зайти в настройки проекта https://jenkins.runtel.ru/job/run_auto_tests/configure
+- найти секцию **Triggers**
+- выбирать нужные Enabled GitLab triggers
+
+----------------------------------------
+<br/>
 
 
 
