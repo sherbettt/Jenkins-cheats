@@ -491,7 +491,42 @@ pipeline {
 
 читай статью [GitLab: jobtrigger](https://plugins.jenkins.io/gitlab-plugin/#plugin-content-job-trigger-configuration)
 
-Можно настроить в JenkinsFile:
+Можно настроить `JenkinsFile`, нужно добавить `triggers` блок **после `agent`**:
+```groovy
+pipeline {
+    agent { label 'deb10' }
+    
+    // ТРИГГЕРЫ ДЛЯ GITLAB
+    triggers {
+        gitlab(
+            triggerOnPush: false,              // НЕ запускать при push
+            triggerOnMergeRequest: true,       // Запускать при MR
+            triggerOnAcceptedMergeRequest: false,
+            triggerOnClosedMergeRequest: false,
+            triggerOnApprovedMergeRequest: false,
+            triggerOnOpenedMergeRequest: true,
+            triggerOnReopenedMergeRequest: true,
+            triggerOnUpdatedMergeRequest: true,
+            triggerOnNoteRequest: false,
+            triggerOnPipelineEvent: false,
+            triggerOnWikiPage: false,
+            triggerOnCommentedMergeRequest: false,
+            triggerOnRebuildMergeRequest: true,
+            branchFilterType: "All",
+            secretToken: ""
+        )
+    }
+    
+    options {
+        skipDefaultCheckout true
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+    }
+    // ... остальной код
+}
+```
+
+А можно в настройках самого проекта:
 - зайти в настройки проекта https://jenkins.runtel.ru/job/run_auto_tests/configure
 - найти секцию **Triggers**
 - выбирать нужные Enabled GitLab triggers
