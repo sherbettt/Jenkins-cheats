@@ -535,8 +535,25 @@ pipeline {
 <br/>
 
 
+## **7. Поменять номер сборки**
+Способов много, но лучше сделать через script console: https://jenkins.runtel.ru/script
+```groovy
+import jenkins.model.*
+import hudson.model.*
 
+// Укажите имя вашей джобы
+def jobName = "run_auto_tests"
+def job = Jenkins.instance.getItem(jobName)
 
+if (job) {
+    // Установите следующий номер сборки
+    job.nextBuildNumber = 370
+    job.save()
+    println "Следующий номер сборки для '${jobName}' установлен: 370"
+} else {
+    println "Джоба '${jobName}' не найдена"
+}
+```
 
 
 
