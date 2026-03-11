@@ -1126,6 +1126,27 @@ EOF
 rpm -E %_gpg_name
 # Должен вывестись ID ключа
 ```
+```bash
+# Более рабочий вариант
+
+### ~/.rpmmacros 
+#%_topdir /var/lib/jenkins/workspace/pbx_v2_redos
+#%_builddir /var/lib/jenkins/workspace/pbx_v2_redos
+#%_sourcedir /var/lib/jenkins/workspace/pbx_v2_redos
+#%_buildroot /var/lib/jenkins/workspace/pbx_v2_redos
+#%_signature gpg
+#%_gpg_path /root/.gnupg
+#%_gpg_name root redos7
+#%_gpgbin /usr/bin/gpg2
+#%_unitdir /usr/lib/systemd/system/
+#%_gpg_name Jenkins RPM Signer
+# Other variant
+%_signature gpg
+%_gpg_path /root/.gnupg
+%_gpg_name ABDA81F04BB74A21936B194F325CE60C3AD367DE
+%_gpgbin /usr/bin/gpg
+%_unitdir /usr/lib/systemd/system/
+```
 
 ### 5. Установка rpm-sign для подписи пакетов
 
