@@ -328,6 +328,7 @@ chown -R root:root /root/.gnupg/
 
 # Установите правильные права
 chmod -R 700 /root/.gnupg/
+chmod -R 600 /root/.gnupg/*
 
 # Проверьте права
 ls -la /root/.gnupg/
