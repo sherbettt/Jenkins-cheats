@@ -993,6 +993,445 @@ gpg-connect-agent "getinfo version" /bye
 <br/>
 
 
+
+
+## Настройка Jenkins агента на Oracle Linux 9.7
+
+Если вы используете Oracle Linux 9.7 вместо RedOS, процесс настройки имеет свои особенности. Все шаги выполняются от root.
+
+### 1. Подключение к серверу
+
+```bash
+# Подключитесь к серверу с Oracle Linux 9.7
+ssh root@<ip-адрес-сервера>
+
+# Проверьте версию ОС
+cat /etc/os-release
+# Должно показать: Oracle Linux Server 9.7
+```
+
+### 2. Установка Java 17 для Jenkins агента
+
+```bash
+# Поиск доступных пакетов Java
+dnf search openjdk17
+
+# Установка Java 17
+dnf install -y java-17-openjdk-devel
+
+# Проверка установки
+java -version
+# Должно показать: openjdk version "17.0.x"
+
+# Узнайте путь к Java (понадобится в настройках Jenkins)
+which java
+# Обычно: /usr/bin/java
+```
+
+### 3. Установка необходимых инструментов
+
+```bash
+# Установка Git и инструментов сборки
+dnf install -y git make gcc gcc-c++ rpm-build rpmdevtools
+
+# Проверка Git
+git --version
+
+# Установка Python 3 и pip
+dnf install -y python3 python3-pip python3-devel
+
+# Проверка Python
+python3 --version
+pip3 --version
+
+# Установка Ansible (EPEL уже настроен в Oracle Linux 9)
+dnf install -y ansible sshpass
+
+# Проверка Ansible
+ansible --version
+which ansible-playbook
+# Обычно: /usr/bin/ansible-playbook
+```
+
+### 4. Настройка GPG для подписи RPM
+
+#### 4.1 Исправление прав доступа к GPG директории
+
+```bash
+# Если вы скопировали GPG ключи с другой машины
+chmod 700 /root/.gnupg
+chmod 600 /root/.gnupg/*
+
+# Проверка прав
+ls -la /root/.gnupg/
+# Все файлы должны иметь права 600, директория 700
+```
+
+#### 4.2 Просмотр существующих GPG ключей
+
+```bash
+# Просмотр всех секретных ключей с keygrip
+gpg --list-secret-keys --with-keygrip
+
+# Пример вывода:
+# sec   rsa2048 2025-09-15 [SC]
+#       8410195CAB1378F5293B039239D988BC61EABBC4
+#       Keygrip = 2D5821DA37178F7D5C4BD5C3DA8FB42F320DA88A
+# uid         [  абсолютно ] root redos7 <support@runtel.ru>
+# ssb   rsa2048 2025-09-15 [E] [   годен до: 2027-09-15]
+#       Keygrip = D56BCEE6CB0B51A9287E73456706E255A205451C
+#
+# sec   rsa4096 2019-04-03 [SC]
+#       ABDA81F04BB74A21936B194F325CE60C3AD367DE
+#       Keygrip = 092D7C69BBE3AA5E239D09C1A8B6166FC6C5B61A
+# uid         [  абсолютно ] runtel (RUNTEL GNUPG) <support@runtel.ru>
+# ssb   rsa4096 2019-04-03 [E]
+#       Keygrip = 5D767F375A4228888CF59E8BC6F9E679311A3280
+```
+
+#### 4.3 Экспорт публичного ключа
+
+```bash
+# Экспортируйте публичный ключ по ID (используйте ключ runtel)
+gpg --export -a ABDA81F04BB74A21936B194F325CE60C3AD367DE > /root/.gnupg/RPM-GPG-KEY-runtel
+
+# Проверьте содержимое
+cat /root/.gnupg/RPM-GPG-KEY-runtel
+# Должен отображаться блок PGP PUBLIC KEY BLOCK
+```
+
+#### 4.4 Настройка .rpmmacros для RPM
+
+```bash
+# Создайте или отредактируйте .rpmmacros
+cat > /root/.rpmmacros << 'EOF'
+# Директории для сборки RPM
+%_topdir /root/rpmbuild
+%_sourcedir %{_topdir}/SOURCES
+%_builddir %{_topdir}/BUILD
+%_buildroot %{_topdir}/BUILDROOT
+%_rpmdir %{_topdir}/RPMS
+%_srcrpmdir %{_topdir}/SRPMS
+%_specdir %{_topdir}/SPECS
+
+# Настройки подписи GPG
+%_signature gpg
+%_gpg_path /root/.gnupg
+%_gpg_name ABDA81F04BB74A21936B194F325CE60C3AD367DE  # Используем ID ключа
+%_gpgbin /usr/bin/gpg
+%_unitdir /usr/lib/systemd/system/
+EOF
+
+# Проверьте конфигурацию
+rpm -E %_gpg_name
+# Должен вывестись ID ключа
+```
+
+### 5. Установка rpm-sign для подписи пакетов
+
+```bash
+# Установите пакет rpm-sign
+dnf install -y rpm-sign
+
+# Проверьте установку
+which rpmsign
+# /usr/bin/rpmsign
+
+rpm --version
+# RPM версия 4.16.1.3 или выше
+```
+
+### 6. Создание и подпись тестового RPM
+
+#### 6.1 Создание тестового spec-файла
+
+```bash
+# Создайте директорию для тестов
+mkdir -p /root/scripts
+cd /root/scripts
+
+# Создайте тестовый spec-файл
+cat > test.spec << 'EOF'
+Summary: Test package
+Name: test
+Version: 1.0
+Release: 1
+License: GPL
+Group: Development/Tools
+BuildArch: noarch
+
+%description
+Test package for RPM signing
+
+%files
+EOF
+```
+
+#### 6.2 Сборка тестового RPM
+
+```bash
+# Соберите RPM
+# --define "_rpmdir $(pwd)" - сохраняет RPM в текущей директории
+rpmbuild -bb test.spec --define "_rpmdir $(pwd)"
+
+# Проверьте, что RPM создан
+ls -la /root/scripts/noarch/test-1.0-1.noarch.rpm
+```
+
+#### 6.3 Подпись тестового RPM
+
+```bash
+# Подпишите RPM
+rpm --addsign /root/scripts/noarch/test-1.0-1.noarch.rpm
+
+# Команда должна выполниться без ошибок
+# Если ключ защищен паролем, появится запрос на ввод
+```
+
+#### 6.4 Импорт публичного ключа в систему RPM
+
+```bash
+# Импортируйте публичный ключ
+rpm --import /root/.gnupg/RPM-GPG-KEY-runtel
+
+# Проверьте импортированные ключи
+rpm -q gpg-pubkey --qf '%{NAME}-%{VERSION}-%{RELEASE}\t%{SUMMARY}\n'
+# Должен появиться ключ: gpg-pubkey-3ad367de-xxxxxxx runtel (RUNTEL GNUPG)
+
+# Или
+rpm -qa | grep gpg-pubkey
+```
+
+#### 6.5 Проверка подписи
+
+```bash
+# Проверьте подпись RPM
+rpm -Kv /root/scripts/noarch/test-1.0-1.noarch.rpm
+
+# Ожидаемый вывод:
+# /root/scripts/noarch/test-1.0-1.noarch.rpm:
+#     Заголовок V4 RSA/SHA256 Signature, key ID 3ad367de: OK
+#     Заголовок SHA256 digest: OK
+#     Заголовок SHA1 digest: OK
+#     Payload SHA256 digest: OK
+#     MD5 digest: OK
+```
+
+### 7. Создание директории для Jenkins
+
+```bash
+# Создайте рабочую директорию Jenkins
+mkdir -p /var/lib/jenkins/workspace
+
+# Установите правильные права
+chmod 755 /var/lib/jenkins
+chmod 755 /var/lib/jenkins/workspace
+
+# Проверьте
+ls -la /var/lib/ | grep jenkins
+```
+
+### 8. Настройка .netrc для доступа к GitLab
+
+```bash
+# Создайте или отредактируйте .netrc
+cat > /root/.netrc << EOF
+machine gitlab.runtel.org
+login jenkins
+password ваш-токен-или-пароль
+EOF
+
+# Установите правильные права (обязательно!)
+chmod 600 /root/.netrc
+
+# Проверьте права
+ls -la /root/.netrc
+# -rw-------. 1 root root 76 мар 11 16:18 /root/.netrc
+```
+
+### 9. Проверочный скрипт для диагностики
+
+```bash
+# Создайте скрипт проверки готовности агента
+cat > /root/agent-check.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "════════════════════════════════════════════"
+echo "🔍 ПРОВЕРКА JENKINS АГЕНТА НА ORACLE LINUX 9"
+echo "════════════════════════════════════════════"
+
+echo -e "\n📌 СИСТЕМА:"
+cat /etc/os-release | grep PRETTY_NAME
+
+echo -e "\n📌 JAVA:"
+java -version 2>&1 | head -2 || echo "❌ Java не установлена"
+
+echo -e "\n📌 GIT:"
+git --version || echo "❌ Git не установлен"
+
+echo -e "\n📌 PYTHON:"
+python3 --version || echo "❌ Python3 не установлен"
+pip3 --version || echo "❌ pip3 не установлен"
+
+echo -e "\n📌 ANSIBLE:"
+ansible --version | head -2 || echo "❌ Ansible не установлен"
+
+echo -e "\n📌 RPM:"
+rpm --version | head -1
+
+echo -e "\n📌 RPM-SIGN:"
+which rpmsign || echo "❌ rpm-sign не установлен"
+
+echo -e "\n📌 GPG КЛЮЧИ (секретные):"
+gpg --list-secret-keys --with-keygrip | grep -A2 "^sec" || echo "❌ Секретные ключи не найдены"
+
+echo -e "\n📌 GPG КЛЮЧИ В RPM:"
+rpm -qa | grep gpg-pubkey || echo "❌ Ключи не импортированы в RPM"
+
+echo -e "\n📌 ТЕСТОВЫЙ RPM:"
+if [ -f /root/scripts/noarch/test-1.0-1.noarch.rpm ]; then
+    echo "✅ Тестовый RPM существует"
+    rpm -Kv /root/scripts/noarch/test-1.0-1.noarch.rpm | grep -E "(OK|NOKEY)"
+else
+    echo "❌ Тестовый RPM не найден"
+fi
+
+echo -e "\n📌 ДИРЕКТОРИЯ JENKINS:"
+ls -la /var/lib/jenkins/ | head -5
+
+echo -e "\n📌 .NETRC:"
+ls -la /root/.netrc
+if [ -f /root/.netrc ]; then
+    echo "✅ .netrc существует, права: $(stat -c %a /root/.netrc)"
+else
+    echo "❌ .netrc не найден"
+fi
+
+echo -e "\n════════════════════════════════════════════"
+echo "✅ ПРОВЕРКА ЗАВЕРШЕНА"
+echo "════════════════════════════════════════════"
+EOF
+
+# Сделайте скрипт исполняемым
+chmod +x /root/agent-check.sh
+
+# Запустите проверку
+/root/agent-check.sh
+```
+
+### 10. Настройка Jenkins агента в веб-интерфейсе
+
+При создании/настройке ноды в Jenkins укажите:
+
+- **Имя ноды**: `oracle9-7` (или любое удобное)
+- **Remote root directory**: `/var/lib/jenkins`
+- **Метки**: `oracle9 oraclelinux9`
+- **Launch method**: `Launch agents via SSH`
+- **Host**: IP-адрес вашего сервера
+- **Credentials**: Добавьте SSH ключ или пароль root
+- **Host Key Verification Strategy**: `Non verifying Verification Strategy`
+- **Java Path**: `/usr/bin/java` (или путь из `which java`)
+- **Availability**: `Keep this agent online as much as possible`
+
+### 11. Полный цикл проверки подписи
+
+```bash
+# Создайте скрипт для полного цикла
+cat > /root/scripts/test-full-cycle.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "════════════════════════════════════════════"
+echo "🔄 ПОЛНЫЙ ЦИКЛ ПРОВЕРКИ ПОДПИСИ RPM"
+echo "════════════════════════════════════════════"
+
+echo -e "\n📦 1. СБОРКА ТЕСТОВОГО RPM"
+cd /root/scripts
+rpmbuild -bb test.spec --define "_rpmdir $(pwd)" > /dev/null
+echo "✅ RPM собран: /root/scripts/noarch/test-1.0-1.noarch.rpm"
+
+echo -e "\n✍️ 2. ПОДПИСЬ RPM"
+rpm --addsign /root/scripts/noarch/test-1.0-1.noarch.rpm
+echo "✅ RPM подписан"
+
+echo -e "\n🔑 3. ИМПОРТ ПУБЛИЧНОГО КЛЮЧА"
+rpm --import /root/.gnupg/RPM-GPG-KEY-runtel 2>/dev/null || \
+    gpg --export -a ABDA81F04BB74A21936B194F325CE60C3AD367DE | rpm --import -
+echo "✅ Ключ импортирован"
+
+echo -e "\n🔍 4. ПРОВЕРКА ПОДПИСИ"
+rpm -Kv /root/scripts/noarch/test-1.0-1.noarch.rpm
+
+echo -e "\n📋 5. КЛЮЧИ В СИСТЕМЕ"
+rpm -qa | grep gpg-pubkey | tail -1
+
+echo -e "\n════════════════════════════════════════════"
+echo "✅ ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ"
+echo "════════════════════════════════════════════"
+EOF
+
+chmod +x /root/scripts/test-full-cycle.sh
+/root/scripts/test-full-cycle.sh
+```
+
+### 12. Отличия Oracle Linux 9 от RedOS 7.3.6
+
+| Параметр | RedOS 7.3.6 | Oracle Linux 9.7 |
+|----------|-------------|------------------|
+| **Пакетный менеджер** | `yum` | `dnf` (совместим с yum) |
+| **Java по умолчанию** | Java 8 или 11 | Java 11 или 17 |
+| **Python** | Python 2.7 + Python 3.6 | Python 3.9+ |
+| **Ansible** | Требует EPEL | Доступен в EPEL |
+| **RPM версия** | 4.11.x | 4.16.x |
+| **Systemd** | Версия 219 | Версия 252+ |
+
+### 13. Возможные проблемы и решения
+
+#### Проблема: "gpg: Внимание: небезопасные права доступа к домашнему каталогу '/root/.gnupg'"
+
+```bash
+# Решение: исправьте права
+chmod 700 /root/.gnupg
+chmod 600 /root/.gnupg/*
+```
+
+#### Проблема: RPM подписан, но проверка показывает "NOKEY"
+
+```bash
+# Решение: импортируйте публичный ключ
+rpm --import /root/.gnupg/RPM-GPG-KEY-runtel
+```
+
+#### Проблема: "Ошибка открытия: Нет такого файла или каталога" при подписи
+
+```bash
+# Решение: проверьте правильность пути
+ls -la /path/to/your.rpm
+# Используйте абсолютный путь
+rpm --addsign /полный/абсолютный/путь/до/файла.rpm
+```
+
+### 14. Готовые метки для Jenkins
+
+При настройке ноды рекомендуется добавить следующие метки (labels):
+- `oracle9`
+- `oracle-linux-9`
+- `rpm-builder`
+- `gpg-signer`
+
+Это позволит в Jenkinsfile указывать:
+```groovy
+agent { label 'oracle9 && rpm-builder' }
+```
+
+<br/>
+<br/>
+
+
+
+
+
 ## Заключение
 
 После выполнения всех шагов у вас будет полностью настроенный Jenkins агент на RedOS 7.3.6 с возможностью:
