@@ -1,4 +1,4 @@
-## Создание агента на развёрнутой вирутальной машине с RedOS v.7.3.6
+## Создание агента на развёрнутой виртуальной машине с RedOS v.7.3.6 (Oracle 9.7)
 
 ### 1. Создайте директорию для Jenkins на целевой ноде:
 
@@ -578,7 +578,7 @@ strace -f rpm --addsign package.rpm
 
 
 
-## Скопировать содеержимое /var/lib/jenkins/ansible/ с машины 192.168.87.24.
+## Скопировать содержимое /var/lib/jenkins/ansible/ с машины 192.168.87.24.
 
 <br/>
 <br/>
@@ -696,3 +696,316 @@ machine gitlab.runtel.org
 login jenkins
 password <password>
 ```
+
+<br/>
+<br/>
+
+
+## Настройка и проверка подписи RPM (дополнено)
+
+### 1. Создание тестового RPM для проверки подписи
+
+```bash
+# Создайте директорию для тестов
+mkdir -p ~/scripts
+cd ~/scripts
+
+# Создайте простой spec-файл для тестового пакета
+cat > test.spec << 'EOF'
+Summary: Test package
+Name: test
+Version: 1.0
+Release: 1
+License: GPL
+Group: Development/Tools
+BuildArch: noarch
+
+%description
+Test package for RPM signing
+
+%files
+EOF
+
+# Соберите тестовый RPM
+# --define "_rpmdir $(pwd)" указывает директорию для сохранения собранного RPM
+rpmbuild -bb test.spec --define "_rpmdir $(pwd)"
+
+# Проверьте, что RPM создан
+ls -la noarch/test-1.0-1.noarch.rpm
+```
+
+### 2. Подпись тестового RPM
+
+```bash
+# Подпишите созданный RPM
+# Команда запросит пароль, если ключ защищен
+rpm --addsign /root/scripts/noarch/test-1.0-1.noarch.rpm
+
+# Проверьте подпись (должна показывать NOKEY, так как публичный ключ еще не импортирован)
+rpm -Kv /root/scripts/noarch/test-1.0-1.noarch.rpm
+```
+
+### 3. Импорт публичного ключа в систему RPM
+
+```bash
+# Экспортируйте публичный ключ из связки GPG
+# ABDA81F04BB74A21936B194F325CE60C3AD367DE - ID вашего ключа
+gpg --export -a ABDA81F04BB74A21936B194F325CE60C3AD367DE > /root/.gnupg/RPM-GPG-KEY-runtel
+
+# Импортируйте ключ в систему RPM
+rpm --import /root/.gnupg/RPM-GPG-KEY-runtel
+
+# Проверьте импортированные ключи
+rpm -q gpg-pubkey --qf '%{NAME}-%{VERSION}-%{RELEASE}\t%{SUMMARY}\n'
+# Должен появиться ключ с ID 3ad367de
+```
+
+### 4. Проверка подписи после импорта ключа
+
+```bash
+# Теперь проверка должна показывать OK для всех проверок
+rpm -Kv /root/scripts/noarch/test-1.0-1.noarch.rpm
+
+# Пример успешного вывода:
+# /root/scripts/noarch/test-1.0-1.noarch.rpm:
+#     Заголовок V4 RSA/SHA256 Signature, key ID 3ad367de: OK
+#     Заголовок SHA256 digest: OK
+#     Заголовок SHA1 digest: OK
+#     Payload SHA256 digest: OK
+#     MD5 digest: OK
+```
+
+### 5. Просмотр информации о GPG ключах
+
+```bash
+# Просмотр всех секретных ключей с отпечатками и keygrip
+gpg --list-secret-keys --with-keygrip
+
+# Keygrip используется для идентификации ключа в gpg-agent
+# Пример вывода:
+# sec   rsa4096 2019-04-03 [SC]
+#       ABDA81F04BB74A21936B194F325CE60C3AD367DE
+#       Keygrip = 092D7C69BBE3AA5E239D09C1A8B6166FC6C5B61A
+
+# Просмотр публичных ключей
+gpg --list-keys
+```
+
+### 6. Финальная конфигурация .rpmmacros
+
+```bash
+# Оптимальная конфигурация для подписи RPM
+cat > ~/.rpmmacros << 'EOF'
+# Директории для сборки RPM
+%_topdir /root/rpmbuild
+%_sourcedir %{_topdir}/SOURCES
+%_builddir %{_topdir}/BUILD
+%_buildroot %{_topdir}/BUILDROOT
+%_rpmdir %{_topdir}/RPMS
+%_srcrpmdir %{_topdir}/SRPMS
+%_specdir %{_topdir}/SPECS
+
+# Настройки подписи GPG
+%_signature gpg
+%_gpg_path /root/.gnupg
+%_gpg_name ABDA81F04BB74A21936B194F325CE60C3AD367DE  # Используем ID ключа
+%_gpgbin /usr/bin/gpg
+%_unitdir /usr/lib/systemd/system/
+EOF
+
+# Проверьте текущее значение _gpg_name
+rpm -E %_gpg_name
+```
+
+### 7. Проверка полного цикла подписи
+
+```bash
+# Создайте скрипт для автоматической проверки
+cat > ~/scripts/test-full-cycle.sh << 'EOF'
+#!/bin/bash
+set -e  # Прерывать выполнение при любой ошибке
+
+echo "=== 1. Building RPM ==="
+cd ~/scripts
+rpmbuild -bb test.spec --define "_rpmdir $(pwd)"
+
+echo "=== 2. Signing RPM ==="
+rpm --addsign noarch/test-1.0-1.noarch.rpm
+
+echo "=== 3. Importing public key ==="
+# Импортируем ключ, игнорируя ошибку если уже импортирован
+rpm --import /root/.gnupg/RPM-GPG-KEY-runtel 2>/dev/null || \
+    gpg --export -a ABDA81F04BB74A21936B194F325CE60C3AD367DE | rpm --import -
+
+echo "=== 4. Verifying signature ==="
+rpm -Kv noarch/test-1.0-1.noarch.rpm
+
+echo "=== 5. Key info ==="
+rpm -qa | grep gpg-pubkey
+EOF
+
+# Сделайте скрипт исполняемым
+chmod +x ~/scripts/test-full-cycle.sh
+
+# Запустите проверку
+~/scripts/test-full-cycle.sh
+```
+
+### 8. Устранение возможных проблем с подписью
+
+```bash
+# Если подпись не работает, проверьте:
+# 1. Права доступа к GPG директории
+ls -la ~/.gnupg/
+# Должно быть drwx------ (700)
+
+# 2. Наличие секретного ключа
+gpg --list-secret-keys | grep -A2 "^sec"
+
+# 3. Правильность _gpg_name в .rpmmacros
+rpm -E %_gpg_name
+
+# 4. Доступность gpg-agent
+gpg-connect-agent /bye
+
+# 5. Если используется пароль на ключ, настройте кэширование
+cat > ~/.gnupg/gpg-agent.conf << EOF
+allow-preset-passphrase
+default-cache-ttl 3600
+max-cache-ttl 86400
+EOF
+
+# Перезапустите gpg-agent
+gpgconf --kill gpg-agent
+gpgconf --launch gpg-agent
+```
+
+<br/>
+<br/>
+
+
+## Интеграция с Jenkins Pipeline
+
+### Пример Jenkinsfile с поддержкой подписи RPM
+
+```groovy
+pipeline {
+    agent { label 'redos-7' }
+    
+    environment {
+        // Указываем TTY для корректной работы GPG
+        GPG_TTY = sh(script: 'tty', returnStdout: true).trim()
+        // Путь к GPG
+        PATH = "/usr/bin:${env.PATH}"
+    }
+    
+    stages {
+        stage('Check Environment') {
+            steps {
+                sh '''
+                    echo "=== Проверка окружения ==="
+                    java -version
+                    python3 --version
+                    ansible --version | head -1
+                    rpm --version
+                    gpg --list-secret-keys
+                '''
+            }
+        }
+        
+        stage('Import GPG Key') {
+            steps {
+                sh '''
+                    # Импортируем публичный ключ, если его нет в системе
+                    if ! rpm -qa | grep -q gpg-pubkey.*3ad367de; then
+                        echo "Импортируем GPG ключ в систему RPM"
+                        gpg --export -a ABDA81F04BB74A21936B194F325CE60C3AD367DE | rpm --import -
+                    else
+                        echo "GPG ключ уже импортирован"
+                    fi
+                '''
+            }
+        }
+        
+        stage('Build RPMs') {
+            steps {
+                sh '''
+                    # Сборка RPM пакетов
+                    cd ${WORKSPACE}
+                    rpmbuild -bb your-package.spec
+                '''
+            }
+        }
+        
+        stage('Sign RPMs') {
+            steps {
+                sh '''
+                    # Подпись всех собранных RPM
+                    cd ${WORKSPACE}/rpmbuild/RPMS/x86_64/
+                    for rpm in *.rpm; do
+                        echo "Подписываем $rpm"
+                        rpm --addsign "$rpm"
+                        # Проверяем подпись
+                        rpm -Kv "$rpm" | grep -q "OK" || exit 1
+                    done
+                    echo "Все RPM успешно подписаны"
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()  // Очистка рабочей директории
+        }
+    }
+}
+```
+
+<br/>
+<br/>
+
+
+## Полезные команды для диагностики
+
+```bash
+# Проверка всех установленных GPG ключей в RPM
+rpm -qa | grep gpg-pubkey | xargs rpm -qi
+
+# Детальная информация о конкретном ключе
+rpm -qi gpg-pubkey-3ad367de-5ca4b9d6
+
+# Проверка подписи всех RPM в директории
+find /path/to/rpms -name "*.rpm" -exec rpm -Kv {} \;
+
+# Экспорт публичного ключа для распространения
+gpg --export -a ABDA81F04BB74A21936B194F325CE60C3AD367DE > RPM-GPG-KEY-runtel
+
+# Проверка, каким ключом подписан RPM
+rpm -qpi package.rpm | grep Signature
+
+# Просмотр логов gpg-agent
+gpg-connect-agent "getinfo version" /bye
+```
+
+<br/>
+<br/>
+
+
+## Заключение
+
+После выполнения всех шагов у вас будет полностью настроенный Jenkins агент на RedOS 7.3.6 с возможностью:
+- Сборки RPM пакетов
+- Подписи RPM с использованием GPG
+- Проверки подписей
+- Интеграции с Ansible для деплоя
+- Работы с Git-репозиториями
+
+**Ключевые моменты для проверки:**
+1. Java 17+ установлена и доступна
+2. GPG ключи имеют статус "абсолютно" (доверие установлено)
+3. Публичный ключ импортирован в систему RPM
+4. .rpmmacros настроен с правильным ID ключа
+5. Тестовый RPM успешно подписывается и проверяется
+
+Теперь ваш агент готов к работе в Jenkins!
