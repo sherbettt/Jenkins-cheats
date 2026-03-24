@@ -1,36 +1,34 @@
-Создан override файл **/etc/systemd/system/jenkins.service.d/proxy.conf** с содержимым:
+Отлично! Вот обновленная и отформатированная версия вашей статьи:
+
+---
+
+# Настройка прокси для Jenkins: полное руководство
+
+## Проблема
+Jenkins не может подключиться к внешним ресурсам (SSO, Telegram, обновления плагинов) при работе через корпоративный прокси-сервер.
+
+---
+
+## Решение: systemd override с правильными параметрами
+
+Создан override файл **/etc/systemd/system/jenkins.service.d/proxy.conf** с финальным содержимым:
+
 ```bash
 [Service]
-Environment="JAVA_OPTS=-Djava.awt.headless=true -Dhttp.proxyHost=5.45.127.22 -Dhttp.proxyPort=1080 -Dhttps.proxyHost=5.45.127.22 -Dhttps.proxyPort=1080 -Dhttp.proxyUser=proxyuser -Dhttp.proxyPassword=RuntelProxy36 -Dhttp.nonProxyHosts=localhost\\|127.0.0.1\\|192.168.*\\|sso.runtel.ru -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes= -Dhttps.protocols=TLSv1.2,TLSv1.3" 
-/etc/system
+Environment="JAVA_OPTS=-Djava.awt.headless=true -Dhttp.proxyHost=5.45.127.22 -Dhttp.proxyPort=1080 -Dhttps.proxyHost=5.45.127.22 -Dhttps.proxyPort=1080 -Dhttp.proxyUser=proxyuser -Dhttp.proxyPassword=RuntelProxy36 -Dhttp.nonProxyHosts=localhost\\|127.0.0.1\\|192.168.*\\|sso.runtel.ru\\|updates.jenkins.io\\|*.jenkins.io\\|mirrors.jenkins.io -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes= -Dhttps.protocols=TLSv1.2,TLSv1.3"
 ```
 
-Т.к. переопределение переменной JAVA_ARGS в /etc/default/jenkins не помогло
+**Важно:** Т.к. переопределение переменной `JAVA_ARGS` в `/etc/default/jenkins` не помогло, используем systemd override.
+
 ```bash
 root@jenkins-updated /etc/systemd/system/jenkins.service.d > ccat /etc/default/jenkins | grep JAVA_ARGS
 #JAVA_ARGS="-Djava.awt.headless=true"
 JAVA_ARGS="-Djava.awt.headless=true -Dhttp.proxyHost=5.45.127.22 -Dhttp.proxyPort=1080 -Dhttps.proxyHost=5.45.127.22 -Dhttps.proxyPort=1080 -Dhttp.nonProxyHosts='localhost|127.0.0.1'"
-#JAVA_ARGS="-Djava.awt.headless=true -Dhttp.proxyHost=5.45.127.22 -Dhttp.proxyPort=1080 -Dhttp.proxyUser=AaAaAaA -Dhttp.proxyPassword=BbBbBbCcCcC -Dhttps.proxyHost=5.45.127.22 -Dhttps.proxyPort=1080 -Dhttps.proxyUser=AaAaAaA -Dhttps.proxyPassword=BbBbBbCcCcC -Dhttp.nonProxyHosts='localhost|127.0.0.1' -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes="
-#JAVA_ARGS="-Xmx256m"
-#JAVA_ARGS="-Djava.net.preferIPv4Stack=true"
 ```
 
+---
 
-
-<!-- 
-```bash
-root@jenkins-updated /etc/systemd/system/jenkins.service.d > ccat /etc/default/jenkins | grep JAVA_ARGS
-#JAVA_ARGS="-Djava.awt.headless=true"
-JAVA_ARGS="-Djava.awt.headless=true -Dhttp.proxyHost=5.45.127.22 -Dhttp.proxyPort=1080 -Dhttps.proxyHost=5.45.127.22 -Dhttps.proxyPort=1080 -Dhttp.nonProxyHosts='localhost|127.0.0.1'"
-#JAVA_ARGS="-Djava.awt.headless=true -Dhttp.proxyHost=5.45.127.22 -Dhttp.proxyPort=1080 -Dhttp.proxyUser=proxyuser -Dhttp.proxyPassword=RuntelProxy36 -Dhttps.proxyHost=5.45.127.22 -Dhttps.proxyPort=1080 -Dhttps.proxyUser=proxyuser -Dhttps.proxyPassword=RuntelProxy36 -Dhttp.nonProxyHosts='localhost|127.0.0.1' -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes="
-#JAVA_ARGS="-Xmx256m"
-#JAVA_ARGS="-Djava.net.preferIPv4Stack=true"
--->
-
------------------------
-<br/>
-
-
+## Диагностика и поиск решения
 
 ### **Этап 1: Проверка базовой связности**
 Сначала мы убедились, что прокси-сервер вообще доступен:
@@ -44,13 +42,16 @@ nc -zv 5.45.127.22 1080 # Порт открыт? Да, "socks open"
 Пробовали разные типы подключения через `curl`:
 ```bash
 # HTTP прокси (не работает)
-curl -x http://proxyuser:pass@5.45.127.22:1080 https://google.com → "Proxy CONNECT aborted"
+curl -x http://proxyuser:pass@5.45.127.22:1080 https://google.com 
+# → "Proxy CONNECT aborted"
 
 # SOCKS5 без авторизации (не работает)
-curl --socks5 5.45.127.22:1080 https://google.com → "No authentication method was acceptable"
+curl --socks5 5.45.127.22:1080 https://google.com 
+# → "No authentication method was acceptable"
 
 # SOCKS5 с авторизацией (РАБОТАЕТ!)
-curl --socks5 5.45.127.22:1080 --proxy-user proxyuser:pass https://google.com → Успех!
+curl --socks5 5.45.127.22:1080 --proxy-user proxyuser:pass https://google.com 
+# → Успех!
 ```
 **Вывод:** прокси работает, но только как SOCKS5 с авторизацией.
 
@@ -92,24 +93,70 @@ systemctl show jenkins | grep Environment # видно только базовы
 Создали override-файл, добавили SSO в `nonProxyHosts`, но SOCKS продолжал игнорировать исключения.
 
 ### **Этап 8: Финальное решение**
-Переключились с SOCKS на HTTP прокси и добавили все внутренние адреса в исключения:
+Переключились с SOCKS на HTTP прокси и добавили все необходимые адреса в исключения:
 ```ini
 -Dhttp.proxyHost=5.45.127.22 -Dhttp.proxyPort=1080
--Dhttp.nonProxyHosts=localhost\\|127.0.0.1\\|192.168.*\\|sso.runtel.ru
+-Dhttp.nonProxyHosts=localhost\\|127.0.0.1\\|192.168.*\\|sso.runtel.ru\\|updates.jenkins.io\\|*.jenkins.io\\|mirrors.jenkins.io
 ```
 
 ### **Этап 9: Проверка результата**
 После перезапуска Jenkins:
-1. Вход через SSO заработал
-2. Telegram-уведомления пошли
-3. `ps aux | grep java` показал все параметры
+1. Вход через SSO заработал ✅
+2. Telegram-уведомления пошли ✅
+3. Обновления плагинов подгрузились ✅
+4. `ps aux | grep java` показал все параметры
 
-## **Ключевые инсайты, которые мы получили**
+```bash
+root@jenkins-updated /etc/systemd/system/jenkins.service.d > systemctl daemon-reload
+root@jenkins-updated /etc/systemd/system/jenkins.service.d > systemctl restart jenkins.service
+root@jenkins-updated /etc/systemd/system/jenkins.service.d > ps aux | grep java | grep nonProxyHosts
+jenkins 1636 ... -Dhttp.nonProxyHosts=localhost|127.0.0.1|192.168.*|sso.runtel.ru|updates.jenkins.io|*.jenkins.io|mirrors.jenkins.io ...
+```
+
+Логи подтверждают успешное подключение:
+```
+2026-03-24 10:26:20.698+0000 [id=208] INFO hudson.util.Retrier#start: Performed the action check updates server successfully at the attempt #1
+```
+
+---
+
+## Ключевые инсайты
 
 1. **Прокси бывают разные** — SOCKS и HTTP ведут себя принципиально по-разному
 2. **DNS может обманывать** — `sso.runtel.ru` оказался внутри сети, хотя имя "внешнее"
 3. **Инструменты диагностики** — `curl`, `nc`, `ps`, `systemctl` — наши лучшие друзья
 4. **Документация важна** — знание того, как Java обрабатывает разные типы прокси, сэкономило часы
 5. **Systemd диктует правила** — в современных системах нужно знать, где действительно лежат конфиги
+6. **Исключения критичны** — для обновлений плагинов нужно добавить `updates.jenkins.io` и `*.jenkins.io` в `nonProxyHosts`
 
+---
 
+## Применение изменений
+
+```bash
+# 1. Создать/отредактировать override файл
+mcedit /etc/systemd/system/jenkins.service.d/proxy.conf
+
+# 2. Перезагрузить конфигурацию systemd
+systemctl daemon-reload
+
+# 3. Перезапустить Jenkins
+systemctl restart jenkins.service
+
+# 4. Проверить, что параметры применились
+ps aux | grep java | grep nonProxyHosts
+
+# 5. Проверить статус
+systemctl status jenkins.service -l --no-pager
+```
+
+---
+
+## Итог
+
+Проблема решена путем:
+- Использования **HTTP прокси** вместо SOCKS (для поддержки `nonProxyHosts`)
+- Добавления **всех внутренних адресов и доменов Jenkins** в исключения
+- Применения параметров через **systemd override** вместо `/etc/default/jenkins`
+
+Jenkins теперь успешно работает через прокси, сохраняя доступ к внутренним ресурсам (SSO) и внешним (обновления плагинов, Telegram).
