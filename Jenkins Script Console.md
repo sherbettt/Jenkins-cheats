@@ -169,13 +169,26 @@ Jenkins.instance.getAllItems(Job).each { job ->
 
 
 
-# Как 
+# Как узнать о выполняющихся сборках
+```groovy
+def job = Jenkins.instance.getItemByFullName("BUILD_BACK_tag_dev")
+def buildingBuilds = job.builds.findAll { it.isBuilding() }
+
+if (buildingBuilds.isEmpty()) {
+    println "Нет выполняющихся сборок для задачи ${job.name}"
+} else {
+    println "Найдены выполняющиеся сборки:"
+    buildingBuilds.each { build ->
+        println "  #${build.number} - с ${build.timestampString} - результат: ${build.result}"
+    }
+}
+```
+
+----------------------------------------
+<br/>
 
 
-
-
-
-
+# Как узнать
 
 
 
