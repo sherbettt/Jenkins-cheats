@@ -17,8 +17,8 @@ NC='\033[0m'
 printf "${GREEN}=== Git Pull ===${NC}\n"
 git pull;
 
-printf "${GREEN}=== Git Push gitflic.ru ===${NC}\n"
+printf "${YELLOW}=== Git Push gitflic.ru ===${NC}\n"
 git push git@gitflic.ru:kkorablin/jenkins-cheats.git;
 
-printf "${GREEN}=== Git Push gitverse.ru ===${NC}\n"
+printf "${YELLOW}=== Git Push gitverse.ru ===${NC}\n"
 git push git@gitverse.ru:sherbettt/Jenkins-cheats.git
