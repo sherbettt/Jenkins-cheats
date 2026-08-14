@@ -100,7 +100,7 @@ OpenJDK 17.0.20
 # Основные директории для Jenkins агента
 mkdir -p /var/lib/jenkins/workspace
 mkdir -p /var/lib/jenkins/ansible
-mkdir -p /opt/jenkins/{agent,workspace,tools,logs}
+mkdir -p /opt/jenkins/{agent,workspace,tools,logs}  # опционально
 
 # Установка прав
 chown -R root:root /var/lib/jenkins
