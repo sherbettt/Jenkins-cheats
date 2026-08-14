@@ -188,8 +188,53 @@ if (buildingBuilds.isEmpty()) {
 <br/>
 
 
-# Как узнать
+# Как узнать все агенты (ноды)
+```groovy
+for (node in Jenkins.instance.nodes) {
+    println node.getNodeName()
+}
+```
+```groovy
+// для новых версий Jenkins
+for (agent in Jenkins.instance.slaves) {
+    println "${agent.name} - ${agent.privateIP}"
+}
+```
+```groovy
+import hudson.slaves.SlaveComputer
 
+for (agent in Jenkins.instance.slaves) {
+    println "========================================"
+    println "Имя агента: ${agent.name}"
+    
+    // Информация о соединении
+    def computer = agent.computer
+    if (computer) {
+        println "  - Офлайн: ${computer.isOffline()}"
+        println "  - Подключен: ${computer.isOnline()}"
+        println "  - Количество исполнителей: ${computer.numExecutors}"
+        
+        // Время бездействия (если доступно)
+        if (computer.idleStartMilliseconds != null) {
+            println "  - Бездействует с: ${new Date(computer.idleStartMilliseconds)}"
+        }
+    }
+    
+    // Информация о системе агента
+    println "  - Тип агента: ${agent.getClass().simpleName}"
+    
+    // Корневая директория
+    if (agent.remoteFS) {
+        println "  - Remote FS: ${agent.remoteFS}"
+    }
+    
+    // Метки (labels)
+    def labels = agent.getLabelString()
+    if (labels) {
+        println "  - Метки: ${labels}"
+    }
+}
+```
 
 
 
