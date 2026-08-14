@@ -72,18 +72,11 @@ root@jenkins-updated ~ > ssh root@192.168.87.118
 **Базовые пакеты:**
 ```bash
 apt install -y \
-    git make gcc g++ \
+    git ansible make gcc g++ \
     gnupg gnupg2 \
     python3 python3-pip python3-venv python3-dev \
     openssh-server curl wget sshpass build-essential \
-    maven ant gradle \
-    docker.io docker-compose \
     unzip zip tar gzip bzip2 xz-utils
-```
-
-**Установка Ansible:**
-```bash
-apt install -y ansible
 ```
 
 **Проверка версий:**
