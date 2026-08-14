@@ -79,6 +79,13 @@ apt install -y \
     unzip zip tar gzip bzip2 xz-utils
 ```
 
+**Установка openjdk 17:**
+```bash
+apt search openjdk
+apt install -y openjdk-17-jdk openjdk-17-doc openjdk-17-dbg
+java --version
+```
+
 **Проверка версий:**
 ```
 git version 2.39.5
