@@ -109,14 +109,16 @@ chmod 755 /opt/jenkins/workspace
 
 ### 3.1. Настройка Jenkins агента в UI
 
-1. **Вход в Jenkins UI**: http://192.168.87.11:8080
+1. **Вход в Jenkins UI**: **https://jenkins.runtel.ru/**
+    > [!NOTE]
+    > Вход по адресу http://192.168.87.11:8080 на данный момент не работает, т.к. применяется Teleport.
 
-2. **Создание нового агента:**
+3. **Создание нового агента:**
    - Dashboard → Manage Jenkins → Nodes → New Node
    - **Имя**: `ai2-agent`
    - **Тип**: `Permanent Agent`
 
-3. **Настройки агента:**
+4. **Настройки агента:**
    ```
    # Основные параметры
    Description: Debian 12 Agent on ai2
