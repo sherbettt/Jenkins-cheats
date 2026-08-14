@@ -57,6 +57,9 @@ yum search openjdk17
 # Установите Java 17
 yum install -y java-17-openjdk-devel
 
+# Для Deb13
+# apt install -y openjdk-17-jdk openjdk-17-doc openjdk-17-dbg
+
 # Проверьте установку
 java -version
 ```
