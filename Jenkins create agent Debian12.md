@@ -121,7 +121,7 @@ chmod 755 /opt/jenkins/workspace
     > Вход по адресу http://192.168.87.11:8080 на данный момент не работает, т.к. применяется Teleport.
 
 3. **Создание нового агента:**
-   - Dashboard → Manage Jenkins → Nodes → New Node
+   - Dashboard → Manage Jenkins → Nodes → New Node (перейти по ссылке **[computer/Узлы](https://jenkins.runtel.ru/computer/)** )
    - **Имя**: `ai2-agent`
    - **Тип**: `Permanent Agent`
 
