@@ -25,7 +25,21 @@
 ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa_jenkins -N ""
 ```
 
-**Созданные ключи закинуть на https://gitlab.runtel.org/**
+**Созданные ключи закинуть на https://gitlab.runtel.org/** :  в раздел технического пользователя gitlab, от имени которого будет на ноду вытягиваться репозиторий с проектом.
+
+Для этого на ноде желательно сразу создать файл ***`.netrc`***.
+```bash
+root@ai2 /opt/runtel/robot
+13:46:51 # ll ~/.netrc 
+-rw-r--r-- 1 root root 76 Aug 14 12:45 /root/.netrc
+
+root@ai2 /opt/runtel/robot
+14:00:46 # cat ~/.netrc 
+machine gitlab.runtel.org
+login jenkins
+password <PASS_WORD>
+
+```
 
 **Настройка авторизации:**
 ```bash
