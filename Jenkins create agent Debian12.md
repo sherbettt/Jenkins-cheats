@@ -25,6 +25,8 @@
 ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa_jenkins -N ""
 ```
 
+**Созданные ключи закинуть на https://gitlab.runtel.org/**
+
 **Настройка авторизации:**
 ```bash
 # Добавление публичного ключа в authorized_keys
