@@ -75,7 +75,7 @@ apt install -y \
     git ansible make gcc g++ \
     gnupg gnupg2 \
     python3 python3-pip python3-venv python3-dev \
-    openssh-server curl wget sshpass build-essential \
+    openssh-server curl wget sshpass build-essential autoconf automake libtool pkg-config \
     unzip zip tar gzip bzip2 xz-utils
 ```
 
